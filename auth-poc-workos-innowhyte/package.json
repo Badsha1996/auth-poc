@@ -1,0 +1,41 @@
+{
+  "name": "auth-poc-workos-innowhyte",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "postinstall": "prisma generate",
+    "db:pull": "prisma db pull",
+    "db:generate": "prisma generate",
+    "typecheck": "tsc --noEmit",
+    "auth:migrate": "tsx scripts/better-auth-migrate.mts"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "@workos-inc/authkit-nextjs": "^4.6.2",
+    "@workos-inc/node": "^12.1.0",
+    "better-auth": "1.7.12",
+    "next": "16.4.5",
+    "pg": "8.23.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^18.0.9",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.5",
+    "prisma": "^7.10.1",
+    "tailwindcss": "^4",
+    "tsx": "4.23.15",
+    "typescript": "^5"
+  }
+}

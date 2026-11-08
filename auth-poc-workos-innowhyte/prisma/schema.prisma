@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Alembic's migration bookkeeping table. Read-only for this app.
+model AlembicVersion {
+  versionNum String @id(map: "alembic_version_pkc") @map("version_num") @db.VarChar(32)
+
+  @@map("alembic_version")
+}
+
+/// Append-only audit trail. A database trigger rejects UPDATE/DELETE/TRUNCATE.
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model AuditEvent {
+  id              String   @id(map: "pk_audit_events") @db.Uuid
+  occurredAt      DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  action          String   @db.VarChar(100)
+  outcome         String   @db.VarChar(20)
+  actorUserId     String?  @map("actor_user_id") @db.Uuid
+  actorExternalId String?  @map("actor_external_id") @db.VarChar(255)
+  actorEmail      String?  @map("actor_email") @db.VarChar(320)
+  targetType      String?  @map("target_type") @db.VarChar(50)
+  targetId        String?  @map("target_id") @db.VarChar(255)
+  ipAddress       String?  @map("ip_address") @db.VarChar(64)
+  userAgent       String?  @map("user_agent") @db.VarChar(512)
+  requestId       String?  @map("request_id") @db.VarChar(64)
+  details         Json     @default("{}")
+
+  @@index([action], map: "ix_audit_events_action")
+  @@index([occurredAt], map: "ix_audit_events_occurred_at")
+  @@index([targetId], map: "ix_audit_events_target_id")
+  @@map("audit_events")
+}
+
+model User {
+  id            String    @id(map: "pk_users") @db.Uuid
+  externalId    String    @map("external_id") @db.VarChar(255)
+  email         String?   @unique(map: "ix_users_email") @db.VarChar(320)
+  fullName      String?   @map("full_name") @db.VarChar(255)
+  avatarUrl     String?   @map("avatar_url") @db.VarChar(2048)
+  role          UserRole  @default(user)
+  lastLoginAt   DateTime? @map("last_login_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  authProvider  String    @default("workos") @map("auth_provider") @db.VarChar(32)
+  emailVerified Boolean   @default(false) @map("email_verified")
+  isActive      Boolean   @default(true) @map("is_active")
+  deactivatedAt DateTime? @map("deactivated_at") @db.Timestamptz(6)
+
+  @@unique([authProvider, externalId], map: "uq_users_auth_provider")
+  @@map("users")
+}
+
+enum UserRole {
+  user
+  admin
+
+  @@map("user_role")
+}
