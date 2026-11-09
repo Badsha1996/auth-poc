@@ -1,9 +1,9 @@
 import { betterAuth, type BetterAuthOptions } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
-import { jwt } from "better-auth/plugins";
+import { genericOAuth, jwt } from "better-auth/plugins";
 import { Pool } from "pg";
 import { sendAuthEmail } from "./email";
-import { socialProviderConfig } from "./social";
+import { genericOAuthProviderConfig, socialProviderConfig, trustedLinkingProviders } from "./social";
 
 /*
  * Better Auth server instance (used when AUTH_PROVIDER=better-auth).
@@ -30,6 +30,9 @@ export function betterAuthOptions() {
   const baseURL = required("BETTER_AUTH_URL").replace(/\/+$/, "");
   const secret = required("BETTER_AUTH_SECRET");
   if (secret.length < 32) throw new Error("BETTER_AUTH_SECRET must be at least 32 characters");
+  // Enterprise OIDC providers (e.g. one Microsoft Entra ID tenant). Same sign-in call and callback route
+  // as the built-in social providers; see lib/auth/better-auth/social.ts.
+  const oidcProviders = genericOAuthProviderConfig();
 
   return {
     appName: "Innowhyte",
@@ -51,6 +54,14 @@ export function betterAuthOptions() {
         sendAuthEmail({ to: user.email, subject: "Verify your email", url }),
     },
     socialProviders: socialProviderConfig(),
+    account: {
+      accountLinking: {
+        // Link a social sign-in to an existing user with the same email only when the provider verified
+        // the email, or is single-tenant Microsoft (see trustedLinkingProviders). The existing user's own
+        // email must be verified too (Better Auth's default requireLocalEmailVerified).
+        trustedProviders: trustedLinkingProviders(),
+      },
+    },
     session: {
       expiresIn: 60 * 60 * 24 * 7, // 7 days, extended while in use
       updateAge: 60 * 60 * 24,
@@ -75,6 +86,7 @@ export function betterAuthOptions() {
           }),
         },
       }),
+      ...(oidcProviders.length ? [genericOAuth({ config: oidcProviders })] : []),
       nextCookies(), // must stay last: lets Server Actions set and clear the session cookie
     ],
   } satisfies BetterAuthOptions;
